@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import Network
 
@@ -64,16 +65,24 @@ final class NaiveProcessManager: @unchecked Sendable {
         configURL: URL,
         onProgress: (@Sendable (String) -> Void)? = nil
     ) async throws {
+        onProgress?("Preparing naive binary…")
         let binaryURL = try preparedBinaryURL()
+        onProgress?("Binary ready: \(binaryURL.path)")
 
-        if await isPortOpen(host: "127.0.0.1", port: ConfigWriter.listenPort) {
+        onProgress?("Checking local port \(ConfigWriter.listenPort)…")
+        if await isPortOpen(host: "127.0.0.1", port: ConfigWriter.listenPort, timeout: 2) {
             throw NaiveProcessError.portAlreadyInUse(ConfigWriter.listenPort)
         }
+        onProgress?("Port \(ConfigWriter.listenPort) is free")
 
-        await stop()
+        onProgress?("Stopping previous naive process…")
+        stopSync()
         clearLog()
+        onProgress?("Ready to launch naive")
 
         try await Task.detached(priority: .userInitiated) {
+            onProgress?("Running naive with config \(configURL.lastPathComponent)")
+
             let proc = Process()
             proc.executableURL = binaryURL
             proc.arguments = [configURL.path]
@@ -96,6 +105,10 @@ final class NaiveProcessManager: @unchecked Sendable {
                 self?.appendLog(chunk, stream: "stdout")
             }
 
+            proc.terminationHandler = { finished in
+                onProgress?("naive process exited with code \(finished.terminationStatus)")
+            }
+
             do {
                 try proc.run()
             } catch {
@@ -105,11 +118,11 @@ final class NaiveProcessManager: @unchecked Sendable {
             self.setProcess(proc)
             onProgress?("naive process started (pid \(proc.processIdentifier))")
 
-            let ready = await self.waitForReady(process: proc, timeout: 12, onProgress: onProgress)
+            let ready = await self.waitForReady(process: proc, timeout: 15, onProgress: onProgress)
             guard ready else {
                 let log = self.combinedLogTail()
                 let exitCode = proc.isRunning ? nil : proc.terminationStatus
-                await self.stop()
+                self.stopSync()
 
                 if let exitCode {
                     throw NaiveProcessError.processExited(exitCode, log)
@@ -136,9 +149,19 @@ final class NaiveProcessManager: @unchecked Sendable {
         logHandler = nil
         stateLock.unlock()
 
-        if let runningProcess, runningProcess.isRunning {
-            runningProcess.terminate()
-            runningProcess.waitUntilExit()
+        guard let runningProcess, runningProcess.isRunning else { return }
+
+        let pid = runningProcess.processIdentifier
+        runningProcess.terminate()
+
+        let deadline = Date().addingTimeInterval(2)
+        while runningProcess.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+
+        if runningProcess.isRunning {
+            kill(pid, SIGKILL)
+            Thread.sleep(forTimeInterval: 0.1)
         }
     }
 
@@ -150,9 +173,10 @@ final class NaiveProcessManager: @unchecked Sendable {
         try ConfigWriter.ensureSupportDirectory()
         let destination = ConfigWriter.supportDirectory.appendingPathComponent("naive")
 
-        if !FileManager.default.fileExists(atPath: destination.path) {
-            try FileManager.default.copyItem(at: bundled, to: destination)
+        if FileManager.default.fileExists(atPath: destination.path) {
+            try FileManager.default.removeItem(at: destination)
         }
+        try FileManager.default.copyItem(at: bundled, to: destination)
 
         try FileManager.default.setAttributes(
             [.posixPermissions: NSNumber(value: Int16(0o755))],
@@ -257,7 +281,7 @@ final class NaiveProcessManager: @unchecked Sendable {
             let logHint = combinedLogTail() ?? "no output from naive yet"
             onProgress?("Waiting for SOCKS :\(ConfigWriter.listenPort)… \(elapsed)s (\(logHint))")
 
-            if await isPortOpen(host: "127.0.0.1", port: ConfigWriter.listenPort) {
+            if await isPortOpen(host: "127.0.0.1", port: ConfigWriter.listenPort, timeout: 1) {
                 return true
             }
             try? await Task.sleep(nanoseconds: 500_000_000)
@@ -265,7 +289,7 @@ final class NaiveProcessManager: @unchecked Sendable {
         return false
     }
 
-    private func isPortOpen(host: String, port: Int) async -> Bool {
+    private func isPortOpen(host: String, port: Int, timeout: TimeInterval) async -> Bool {
         await withCheckedContinuation { continuation in
             let gate = PortCheckGate()
             let connection = NWConnection(
@@ -285,6 +309,10 @@ final class NaiveProcessManager: @unchecked Sendable {
                 }
             }
             connection.start(queue: queue)
+            queue.asyncAfter(deadline: .now() + timeout) {
+                connection.cancel()
+                gate.complete(continuation, value: false)
+            }
         }
     }
 }
