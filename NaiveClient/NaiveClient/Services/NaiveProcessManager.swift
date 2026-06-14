@@ -43,85 +43,131 @@ private final class PortCheckGate: @unchecked Sendable {
     }
 }
 
-final class NaiveProcessManager: ObservableObject {
-    @Published private(set) var isRunning = false
-    @Published private(set) var lastLogLine: String?
-
+final class NaiveProcessManager: @unchecked Sendable {
+    private let stateLock = NSLock()
     private var process: Process?
     private var stderrBuffer = ""
+    private var lastLogLine: String?
+    private var isRunning = false
     private let queue = DispatchQueue(label: "NaiveProcessManager")
 
-    var binaryURL: URL? {
-        Bundle.main.url(forResource: "naive", withExtension: nil)
-    }
-
     func start(configURL: URL) async throws {
-        guard let binaryURL else { throw NaiveProcessError.binaryNotFound }
+        let binaryURL = try preparedBinaryURL()
 
         if await isPortOpen(host: "127.0.0.1", port: ConfigWriter.listenPort) {
             throw NaiveProcessError.portAlreadyInUse(ConfigWriter.listenPort)
         }
 
         await stop()
-        stderrBuffer = ""
+        clearLog()
 
-        let proc = Process()
-        proc.executableURL = binaryURL
-        proc.arguments = [configURL.path]
-        proc.currentDirectoryURL = configURL.deletingLastPathComponent()
+        try await Task.detached(priority: .userInitiated) {
+            let proc = Process()
+            proc.executableURL = binaryURL
+            proc.arguments = [configURL.path]
+            proc.currentDirectoryURL = configURL.deletingLastPathComponent()
 
-        let stderrPipe = Pipe()
-        proc.standardOutput = Pipe()
-        proc.standardError = stderrPipe
+            let stderrPipe = Pipe()
+            proc.standardOutput = Pipe()
+            proc.standardError = stderrPipe
 
-        stderrPipe.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else { return }
-            Task { @MainActor [weak self] in
+            stderrPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                let data = handle.availableData
+                guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else { return }
                 self?.appendLog(chunk)
             }
-        }
 
-        do {
-            try proc.run()
-        } catch {
-            throw NaiveProcessError.failedToStart(error.localizedDescription)
-        }
-
-        process = proc
-
-        let ready = await waitForReady(process: proc, timeout: 8)
-        guard ready else {
-            let log = lastMeaningfulLog()
-            let exitCode = proc.isRunning ? nil : proc.terminationStatus
-            await stop()
-
-            if let exitCode {
-                throw NaiveProcessError.processExited(exitCode, log)
+            do {
+                try proc.run()
+            } catch {
+                throw NaiveProcessError.failedToStart(error.localizedDescription)
             }
-            throw NaiveProcessError.portNotReady(log)
-        }
 
-        await MainActor.run {
-            isRunning = true
-        }
+            self.setProcess(proc)
+
+            let ready = await self.waitForReady(process: proc, timeout: 8)
+            guard ready else {
+                let log = self.lastMeaningfulLog()
+                let exitCode = proc.isRunning ? nil : proc.terminationStatus
+                await self.stop()
+
+                if let exitCode {
+                    throw NaiveProcessError.processExited(exitCode, log)
+                }
+                throw NaiveProcessError.portNotReady(log)
+            }
+
+            self.setRunning(true)
+        }.value
     }
 
     func stop() async {
-        stopSync()
+        await Task.detached(priority: .userInitiated) {
+            self.stopSync()
+        }.value
     }
 
     func stopSync() {
-        if let process, process.isRunning {
-            process.terminate()
-            process.waitUntilExit()
-        }
+        stateLock.lock()
+        let runningProcess = process
         process = nil
         isRunning = false
+        stateLock.unlock()
+
+        if let runningProcess, runningProcess.isRunning {
+            runningProcess.terminate()
+            runningProcess.waitUntilExit()
+        }
     }
 
-    @MainActor
+    private func preparedBinaryURL() throws -> URL {
+        guard let bundled = Bundle.main.url(forResource: "naive", withExtension: nil) else {
+            throw NaiveProcessError.binaryNotFound
+        }
+
+        try ConfigWriter.ensureSupportDirectory()
+        let destination = ConfigWriter.supportDirectory.appendingPathComponent("naive")
+
+        if !FileManager.default.fileExists(atPath: destination.path) {
+            try FileManager.default.copyItem(at: bundled, to: destination)
+        }
+
+        try FileManager.default.setAttributes(
+            [.posixPermissions: NSNumber(value: Int16(0o755))],
+            ofItemAtPath: destination.path
+        )
+        removeQuarantine(from: destination)
+        return destination
+    }
+
+    private func removeQuarantine(from url: URL) {
+        url.withUnsafeFileSystemRepresentation { path in
+            guard let path else { return }
+            removexattr(path, "com.apple.quarantine", 0)
+        }
+    }
+
+    private func setProcess(_ process: Process) {
+        stateLock.lock()
+        self.process = process
+        stateLock.unlock()
+    }
+
+    private func setRunning(_ running: Bool) {
+        stateLock.lock()
+        isRunning = running
+        stateLock.unlock()
+    }
+
+    private func clearLog() {
+        stateLock.lock()
+        stderrBuffer = ""
+        lastLogLine = nil
+        stateLock.unlock()
+    }
+
     private func appendLog(_ chunk: String) {
+        stateLock.lock()
         stderrBuffer.append(chunk)
         let lines = stderrBuffer.split(separator: "\n", omittingEmptySubsequences: false)
         if let last = lines.last {
@@ -132,9 +178,12 @@ final class NaiveProcessManager: ObservableObject {
             }
             lastLogLine = String(last).trimmingCharacters(in: .whitespacesAndNewlines)
         }
+        stateLock.unlock()
     }
 
     private func lastMeaningfulLog() -> String? {
+        stateLock.lock()
+        defer { stateLock.unlock() }
         let line = lastLogLine?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let line, !line.isEmpty else { return nil }
         return line

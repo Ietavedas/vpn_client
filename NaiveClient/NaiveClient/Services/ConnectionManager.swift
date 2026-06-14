@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 enum ConnectionManagerError: LocalizedError {
@@ -89,12 +90,12 @@ final class ConnectionManager: ObservableObject {
             do {
                 let configURL = try ConfigWriter.write(profile: profile)
                 try await processManager.start(configURL: configURL)
-                try proxyManager.enable()
+                try await proxyManager.enable()
                 state = .connected
                 lastConnectionError = nil
             } catch {
                 await processManager.stop()
-                proxyManager.disable()
+                await proxyManager.disable()
                 setConnectionError(error)
             }
         }
@@ -106,16 +107,16 @@ final class ConnectionManager: ObservableObject {
         }
     }
 
-    func disconnectImmediately() {
-        processManager.stopSync()
-        proxyManager.disable()
+    func disconnectImmediately() async {
+        await processManager.stop()
+        await proxyManager.disable()
         state = .disconnected
         lastConnectionError = nil
     }
 
     private func disconnectInternal() async {
         await processManager.stop()
-        proxyManager.disable()
+        await proxyManager.disable()
         state = .disconnected
         lastConnectionError = nil
     }
@@ -133,6 +134,16 @@ final class ConnectionManager: ObservableObject {
         let message = error.localizedDescription
         lastConnectionError = message
         state = .error(message)
+        showErrorAlert(message)
+    }
+
+    private func showErrorAlert(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Connection failed"
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     private func loadSavedProfile() {

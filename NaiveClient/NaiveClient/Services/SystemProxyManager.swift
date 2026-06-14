@@ -17,27 +17,52 @@ enum SystemProxyError: LocalizedError {
     }
 }
 
-final class SystemProxyManager {
+final class SystemProxyManager: @unchecked Sendable {
     static let shared = SystemProxyManager()
+    private let lock = NSLock()
     private var enabledServices: [String] = []
 
-    func enable(port: Int = ConfigWriter.listenPort) throws {
-        let services = try activeNetworkServices()
-        guard !services.isEmpty else { throw SystemProxyError.noNetworkService }
+    func enable(port: Int = ConfigWriter.listenPort) async throws {
+        try await Task.detached(priority: .userInitiated) {
+            try self.enableSync(port: port)
+        }.value
+    }
 
+    func disable() async {
+        await Task.detached(priority: .userInitiated) {
+            self.disableSync()
+        }.value
+    }
+
+    func disableSync() {
+        lock.lock()
+        let services = enabledServices
         enabledServices = []
+        lock.unlock()
+
         for service in services {
-            try runNetworkSetup(["-setsocksfirewallproxy", service, "127.0.0.1", "\(port)"])
-            try runNetworkSetup(["-setsocksfirewallproxystate", service, "on"])
-            enabledServices.append(service)
+            _ = try? runNetworkSetup(["-setsocksfirewallproxystate", service, "off"])
         }
     }
 
-    func disable() {
-        for service in enabledServices {
-            _ = try? runNetworkSetup(["-setsocksfirewallproxystate", service, "off"])
-        }
+    private func enableSync(port: Int) throws {
+        let services = try activeNetworkServices()
+        guard !services.isEmpty else { throw SystemProxyError.noNetworkService }
+
+        lock.lock()
         enabledServices = []
+        lock.unlock()
+
+        var applied: [String] = []
+        for service in services {
+            try runNetworkSetup(["-setsocksfirewallproxy", service, "127.0.0.1", "\(port)"])
+            try runNetworkSetup(["-setsocksfirewallproxystate", service, "on"])
+            applied.append(service)
+        }
+
+        lock.lock()
+        enabledServices = applied
+        lock.unlock()
     }
 
     private func activeNetworkServices() throws -> [String] {

@@ -41,8 +41,9 @@ fi
 echo "Built app: ${APP_PATH}"
 
 echo "==> Ad-hoc sign app and bundled naive binary"
-/usr/bin/codesign --force --deep --sign - "${APP_PATH}/Contents/Resources/naive"
-/usr/bin/codesign --force --deep --sign - "${APP_PATH}"
+ENTITLEMENTS="${ROOT_DIR}/NaiveClient/NaiveClient/NaiveClient.entitlements"
+/usr/bin/codesign --force --sign - --entitlements "${ENTITLEMENTS}" "${APP_PATH}/Contents/Resources/naive"
+/usr/bin/codesign --force --deep --sign - --entitlements "${ENTITLEMENTS}" "${APP_PATH}"
 
 echo "==> Create DMG"
 rm -rf "${STAGING_DIR}" "${DMG_PATH}"
