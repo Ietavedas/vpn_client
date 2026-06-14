@@ -45,16 +45,16 @@ echo "==> Ad-hoc sign app and bundled naive binary"
 /usr/bin/codesign --force --deep --sign - "${APP_PATH}"
 
 echo "==> Create DMG"
-rm -rf "${STAGING_DIR}"
+rm -rf "${STAGING_DIR}" "${DMG_PATH}"
 mkdir -p "${STAGING_DIR}" "${DIST_DIR}"
 cp -R "${APP_PATH}" "${STAGING_DIR}/"
 ln -s /Applications "${STAGING_DIR}/Applications"
 
 hdiutil create \
   -volname "NaiveClient" \
+  -srcfolder "${STAGING_DIR}" \
   -ov \
   -format UDZO \
-  "${DMG_PATH}" \
-  "${STAGING_DIR}"
+  "${DMG_PATH}"
 
 echo "Created ${DMG_PATH}"
