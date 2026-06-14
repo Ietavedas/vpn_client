@@ -15,8 +15,8 @@ struct NaiveProfile: Codable, Equatable {
     func proxyURLString() -> String {
         var auth = ""
         if let username, let password {
-            let encodedUser = username.addingPercentEncoding(withAllowedCharacters: .urlUserAllowed) ?? username
-            let encodedPass = password.addingPercentEncoding(withAllowedCharacters: .urlPasswordAllowed) ?? password
+            let encodedUser = username.addingPercentEncoding(withAllowedCharacters: NaiveCharacterSets.urlUser) ?? username
+            let encodedPass = password.addingPercentEncoding(withAllowedCharacters: NaiveCharacterSets.urlPassword) ?? password
             auth = "\(encodedUser):\(encodedPass)@"
         }
         return "\(proto)://\(auth)\(host):\(port)"
@@ -29,18 +29,4 @@ struct NaiveProfile: Codable, Equatable {
             "log": "",
         ]
     }
-}
-
-private extension CharacterSet {
-    static let urlUserAllowed: CharacterSet = {
-        var set = CharacterSet.urlUserAllowed
-        set.insert(charactersIn: ":")
-        return set
-    }()
-
-    static let urlPasswordAllowed: CharacterSet = {
-        var set = CharacterSet.urlPasswordAllowed
-        set.insert(charactersIn: ":@")
-        return set
-    }()
 }

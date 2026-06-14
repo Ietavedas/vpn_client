@@ -19,6 +19,7 @@
 		A1000000000000000000000A /* naive in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* naive */; };
 		A1000000000000000000000B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* AppDelegate.swift */; };
 		A1000000000000000000000C /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* StatusBarController.swift */; };
+		A1000000000000000000000D /* NaiveCharacterSets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* NaiveCharacterSets.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		A2000000000000000000000C /* NaiveClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NaiveClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2000000000000000000000D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A2000000000000000000000E /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		A2000000000000000000000F /* NaiveCharacterSets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveCharacterSets.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				A20000000000000000000001 /* NaiveClientApp.swift */,
 				A2000000000000000000000D /* AppDelegate.swift */,
 				A2000000000000000000000E /* StatusBarController.swift */,
+				A2000000000000000000000F /* NaiveCharacterSets.swift */,
 				A20000000000000000000002 /* MenuBarView.swift */,
 				A40000000000000000000004 /* Models */,
 				A40000000000000000000005 /* Services */,
@@ -189,6 +192,7 @@
 				A10000000000000000000008 /* ConnectionManager.swift in Sources */,
 				A1000000000000000000000B /* AppDelegate.swift in Sources */,
 				A1000000000000000000000C /* StatusBarController.swift in Sources */,
+				A1000000000000000000000D /* NaiveCharacterSets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

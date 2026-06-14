@@ -62,8 +62,8 @@ enum NaiveURLParser {
     static func toURLString(from profile: NaiveProfile) -> String {
         var auth = ""
         if let username = profile.username, let password = profile.password {
-            let user = username.addingPercentEncoding(withAllowedCharacters: .urlUserAllowed) ?? username
-            let pass = password.addingPercentEncoding(withAllowedCharacters: .urlPasswordAllowed) ?? password
+            let user = username.addingPercentEncoding(withAllowedCharacters: NaiveCharacterSets.urlUser) ?? username
+            let pass = password.addingPercentEncoding(withAllowedCharacters: NaiveCharacterSets.urlPassword) ?? password
             auth = "\(user):\(pass)@"
         }
 
@@ -165,18 +165,4 @@ enum NaiveURLParser {
     private static func defaultPort(for proto: String) -> Int {
         443
     }
-}
-
-private extension CharacterSet {
-    static let urlUserAllowed: CharacterSet = {
-        var set = CharacterSet.urlUserAllowed
-        set.insert(charactersIn: ":")
-        return set
-    }()
-
-    static let urlPasswordAllowed: CharacterSet = {
-        var set = CharacterSet.urlPasswordAllowed
-        set.insert(charactersIn: ":@")
-        return set
-    }()
 }
