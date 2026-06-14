@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import UniformTypeIdentifiers
 
 enum ConnectionManagerError: LocalizedError {
     case noProfile
@@ -35,6 +36,11 @@ final class ConnectionManager: ObservableObject {
     @Published private(set) var connectionSteps: [ConnectionStepItem] = []
     @Published private(set) var activityLog: [String] = []
     @Published private(set) var currentStepTitle: String?
+    @Published private(set) var logActionMessage: String?
+
+    var activityLogDisplayText: String {
+        activityLog.joined(separator: "\n")
+    }
 
     private let processManager = NaiveProcessManager()
     private let proxyManager = SystemProxyManager.shared
@@ -216,6 +222,91 @@ final class ConnectionManager: ObservableObject {
         importURLText = NaiveURLParser.toURLString(from: profile)
         saveProfile()
         appendActivity("Protocol set to \(proto.uppercased())")
+    }
+
+    func exportLogText() -> String {
+        var lines: [String] = [
+            "NaiveClient log",
+            "Generated: \(ISO8601DateFormatter().string(from: Date()))",
+            "State: \(stateLabel)",
+        ]
+
+        if let profile {
+            lines.append("Server: \(profile.displayAddress)")
+            lines.append("Protocol: \(profile.proto.uppercased())")
+        }
+
+        if let lastConnectionError {
+            lines.append("Last error: \(lastConnectionError)")
+        }
+
+        if !connectionSteps.isEmpty {
+            lines.append("")
+            lines.append("Steps:")
+            for step in connectionSteps {
+                let status: String
+                switch step.status {
+                case .pending: status = "pending"
+                case .running: status = "running"
+                case .success: status = "ok"
+                case .failed: status = "failed"
+                }
+                var row = "- \(step.title): \(status)"
+                if let detail = step.detail, !detail.isEmpty {
+                    row += " — \(detail)"
+                }
+                lines.append(row)
+            }
+        }
+
+        lines.append("")
+        lines.append("Activity:")
+        if activityLog.isEmpty {
+            lines.append("(empty)")
+        } else {
+            lines.append(contentsOf: activityLog)
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    func copyActivityLogToClipboard() {
+        let text = exportLogText()
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        logActionMessage = "Copied \(activityLog.count) lines to clipboard"
+    }
+
+    func saveActivityLogToFile() {
+        let panel = NSSavePanel()
+        panel.title = "Save NaiveClient log"
+        panel.nameFieldStringValue = "NaiveClient-log.txt"
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            try exportLogText().write(to: url, atomically: true, encoding: .utf8)
+            logActionMessage = "Saved to \(url.lastPathComponent)"
+        } catch {
+            logActionMessage = "Save failed: \(error.localizedDescription)"
+        }
+    }
+
+    func clearActivityLog() {
+        activityLog = []
+        logActionMessage = "Log cleared"
+    }
+
+    private var stateLabel: String {
+        switch state {
+        case .disconnected: return "disconnected"
+        case .connecting: return "connecting"
+        case .connected: return "connected"
+        case .error(let message): return "error: \(message)"
+        }
     }
 
     private func resetConnectionProgress() {

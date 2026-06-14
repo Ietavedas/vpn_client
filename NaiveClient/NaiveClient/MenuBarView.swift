@@ -130,24 +130,44 @@ struct MenuBarView: View {
                     stepRow(step)
                 }
 
-                if !manager.activityLog.isEmpty {
-                    Divider()
+                Divider()
+
+                HStack {
                     Text("Activity log")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 4) {
-                            ForEach(Array(manager.activityLog.enumerated()), id: \.offset) { _, line in
-                                Text(line)
-                                    .font(.system(.caption2, design: .monospaced))
-                                    .foregroundStyle(logColor(for: line))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .textSelection(.enabled)
-                            }
-                        }
+                    Spacer()
+                    Button("Copy all") {
+                        manager.copyActivityLogToClipboard()
                     }
-                    .frame(height: 130)
+                    Button("Save…") {
+                        manager.saveActivityLogToFile()
+                    }
+                    Button("Clear") {
+                        manager.clearActivityLog()
+                    }
+                }
+                .font(.caption)
+
+                if let message = manager.logActionMessage {
+                    Text(message)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                ScrollView {
+                    Text(manager.activityLogDisplayText.isEmpty ? "No log lines yet." : manager.activityLogDisplayText)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(8)
+                        .textSelection(.enabled)
+                }
+                .frame(height: 160)
+                .background(Color(nsColor: .textBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(Color.secondary.opacity(0.25))
                 }
             }
         }
@@ -196,19 +216,6 @@ struct MenuBarView: View {
         case .failed:
             return .red
         }
-    }
-
-    private func logColor(for line: String) -> Color {
-        if line.contains("ERROR:") {
-            return .red
-        }
-        if line.contains("naive:") {
-            return .primary
-        }
-        if line.contains("OK") || line.contains("success") {
-            return .green
-        }
-        return .secondary
     }
 }
 
