@@ -35,7 +35,7 @@ final class SystemProxyManager {
 
     func disable() {
         for service in enabledServices {
-            try? runNetworkSetup(["-setsocksfirewallproxystate", service, "off"])
+            _ = try? runNetworkSetup(["-setsocksfirewallproxystate", service, "off"])
         }
         enabledServices = []
     }

@@ -30,6 +30,19 @@ enum NaiveProcessError: LocalizedError {
     }
 }
 
+private final class PortCheckGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var finished = false
+
+    func complete(_ continuation: CheckedContinuation<Bool, Never>, value: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !finished else { return }
+        finished = true
+        continuation.resume(returning: value)
+    }
+}
+
 final class NaiveProcessManager: ObservableObject {
     @Published private(set) var isRunning = false
     @Published private(set) var lastLogLine: String?
@@ -49,7 +62,7 @@ final class NaiveProcessManager: ObservableObject {
             throw NaiveProcessError.portAlreadyInUse(ConfigWriter.listenPort)
         }
 
-        try await stop()
+        await stop()
         stderrBuffer = ""
 
         let proc = Process()
@@ -61,10 +74,10 @@ final class NaiveProcessManager: ObservableObject {
         proc.standardOutput = Pipe()
         proc.standardError = stderrPipe
 
-        stderrPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+        stderrPipe.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
             guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else { return }
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 self?.appendLog(chunk)
             }
         }
@@ -107,6 +120,7 @@ final class NaiveProcessManager: ObservableObject {
         isRunning = false
     }
 
+    @MainActor
     private func appendLog(_ chunk: String) {
         stderrBuffer.append(chunk)
         let lines = stderrBuffer.split(separator: "\n", omittingEmptySubsequences: false)
@@ -142,22 +156,19 @@ final class NaiveProcessManager: ObservableObject {
 
     private func isPortOpen(host: String, port: Int) async -> Bool {
         await withCheckedContinuation { continuation in
-            var resumed = false
+            let gate = PortCheckGate()
             let connection = NWConnection(
                 host: NWEndpoint.Host(host),
                 port: NWEndpoint.Port(integerLiteral: UInt16(port)),
                 using: .tcp
             )
             connection.stateUpdateHandler = { state in
-                guard !resumed else { return }
                 switch state {
                 case .ready:
-                    resumed = true
                     connection.cancel()
-                    continuation.resume(returning: true)
+                    gate.complete(continuation, value: true)
                 case .failed, .cancelled:
-                    resumed = true
-                    continuation.resume(returning: false)
+                    gate.complete(continuation, value: false)
                 default:
                     break
                 }
