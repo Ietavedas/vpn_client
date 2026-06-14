@@ -42,8 +42,8 @@ echo "Built app: ${APP_PATH}"
 
 echo "==> Ad-hoc sign app and bundled naive binary"
 ENTITLEMENTS="${ROOT_DIR}/NaiveClient/NaiveClient/NaiveClient.entitlements"
-/usr/bin/codesign --force --sign - --options runtime "${APP_PATH}/Contents/Resources/naive"
-/usr/bin/codesign --force --sign - --options runtime --entitlements "${ENTITLEMENTS}" "${APP_PATH}"
+/usr/bin/codesign --force --sign - "${APP_PATH}/Contents/Resources/naive"
+/usr/bin/codesign --force --sign - --entitlements "${ENTITLEMENTS}" "${APP_PATH}"
 /usr/bin/codesign --verify --verbose=2 "${APP_PATH}"
 
 echo "==> Create DMG"

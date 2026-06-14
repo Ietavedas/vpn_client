@@ -23,13 +23,12 @@ No Xcode or Homebrew is required for end users.
 
 ### App opens but nothing appears?
 
-NaiveClient is a **menu bar app** — there is no Dock icon and no main window.
+NaiveClient shows **an icon in the Dock** and **in the menu bar** (top-right). On launch it also **opens the control panel automatically**.
 
-1. Look at the **top menu bar** (right side, near Wi‑Fi and the clock).
-2. Click the **network icon** (or `…` / `>>` if icons are hidden).
-3. On first launch, a hint dialog should appear.
+1. Look for **NaiveClient** in the Dock, or the **network icon** in the menu bar.
+2. Click either one to open Import / Connect.
 
-If double‑clicking the app in Applications does nothing, it may already be running:
+If nothing happens:
 
 ```bash
 pkill NaiveClient
@@ -37,10 +36,10 @@ xattr -cr /Applications/NaiveClient.app
 open /Applications/NaiveClient.app
 ```
 
-To check for crash logs:
+Run from Terminal to see crash output:
 
 ```bash
-log show --predicate 'process == "NaiveClient"' --last 5m
+/Applications/NaiveClient.app/Contents/MacOS/NaiveClient
 ```
 
 ## Usage

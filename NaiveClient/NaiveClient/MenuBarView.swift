@@ -84,9 +84,6 @@ struct MenuBarView: View {
         case .connected:
             Label("Connected via SOCKS 127.0.0.1:1080", systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
-            Text("The panel may close — the app keeps running in the menu bar.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
         case .error(let message):
             VStack(alignment: .leading, spacing: 4) {
                 Label("Connection failed", systemImage: "exclamationmark.triangle.fill")
