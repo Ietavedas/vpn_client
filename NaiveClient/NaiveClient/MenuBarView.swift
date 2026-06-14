@@ -13,7 +13,7 @@ struct MenuBarView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                TextField("naive://user:pass@host:8443#name", text: $manager.importURLText, axis: .vertical)
+                TextField("naive+quic://user:pass@host:8443#name", text: $manager.importURLText, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(2...4)
                     .font(.system(.caption, design: .monospaced))
@@ -25,10 +25,21 @@ struct MenuBarView: View {
 
             if let profile = manager.profile {
                 GroupBox {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 8) {
                         LabeledContent("Name", value: profile.name)
                         LabeledContent("Server", value: profile.displayAddress)
-                        LabeledContent("Protocol", value: profile.proto.uppercased())
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Protocol")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Picker("Protocol", selection: protocolBinding) {
+                                Text("QUIC").tag("quic")
+                                Text("HTTPS").tag("https")
+                            }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+                        }
                     }
                     .font(.caption)
                 }
@@ -78,6 +89,13 @@ struct MenuBarView: View {
         if manager.isConnecting { return true }
         if manager.profile == nil { return true }
         return false
+    }
+
+    private var protocolBinding: Binding<String> {
+        Binding(
+            get: { manager.profile?.proto ?? "https" },
+            set: { manager.setProtocol($0) }
+        )
     }
 
     @ViewBuilder

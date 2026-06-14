@@ -26,7 +26,15 @@ struct NaiveProfile: Codable, Equatable {
         [
             "listen": "socks://127.0.0.1:\(listenPort)",
             "proxy": proxyURLString(),
-            "log": "",
+            "log": "stderr",
         ]
+    }
+
+    func redactedProxyURLString() -> String {
+        var auth = ""
+        if let username {
+            auth = "\(username):***@"
+        }
+        return "\(proto)://\(auth)\(host):\(port)"
     }
 }

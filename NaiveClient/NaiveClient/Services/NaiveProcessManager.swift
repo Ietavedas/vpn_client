@@ -46,6 +46,7 @@ private final class PortCheckGate: @unchecked Sendable {
 final class NaiveProcessManager: @unchecked Sendable {
     private let stateLock = NSLock()
     private var process: Process?
+    private var stdoutBuffer = ""
     private var stderrBuffer = ""
     private var emittedLogLines: [String] = []
     private var lastLogLine: String?
@@ -79,13 +80,20 @@ final class NaiveProcessManager: @unchecked Sendable {
             proc.currentDirectoryURL = configURL.deletingLastPathComponent()
 
             let stderrPipe = Pipe()
-            proc.standardOutput = Pipe()
+            let stdoutPipe = Pipe()
+            proc.standardOutput = stdoutPipe
             proc.standardError = stderrPipe
 
             stderrPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
                 let data = handle.availableData
                 guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else { return }
-                self?.appendLog(chunk)
+                self?.appendLog(chunk, stream: "stderr")
+            }
+
+            stdoutPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                let data = handle.availableData
+                guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else { return }
+                self?.appendLog(chunk, stream: "stdout")
             }
 
             do {
@@ -175,32 +183,39 @@ final class NaiveProcessManager: @unchecked Sendable {
 
     private func clearLog() {
         stateLock.lock()
+        stdoutBuffer = ""
         stderrBuffer = ""
         emittedLogLines = []
         lastLogLine = nil
         stateLock.unlock()
     }
 
-    private func appendLog(_ chunk: String) {
+    private func appendLog(_ chunk: String, stream: String) {
         stateLock.lock()
-        stderrBuffer.append(chunk)
         var linesToEmit: [String] = []
-
-        while let newlineIndex = stderrBuffer.firstIndex(of: "\n") {
-            let line = String(stderrBuffer[..<newlineIndex])
-            stderrBuffer = String(stderrBuffer[stderrBuffer.index(after: newlineIndex)...])
-            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                linesToEmit.append(trimmed)
-            }
+        if stream == "stdout" {
+            drainBuffer(&stdoutBuffer, chunk: chunk, stream: stream, into: &linesToEmit)
+        } else {
+            drainBuffer(&stderrBuffer, chunk: chunk, stream: stream, into: &linesToEmit)
         }
-
         let handler = logHandler
         stateLock.unlock()
 
         for line in linesToEmit {
             recordEmittedLine(line)
             handler?(line)
+        }
+    }
+
+    private func drainBuffer(_ buffer: inout String, chunk: String, stream: String, into linesToEmit: inout [String]) {
+        buffer.append(chunk)
+        while let newlineIndex = buffer.firstIndex(of: "\n") {
+            let line = String(buffer[..<newlineIndex])
+            buffer = String(buffer[buffer.index(after: newlineIndex)...])
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                linesToEmit.append("[\(stream)] \(trimmed)")
+            }
         }
     }
 

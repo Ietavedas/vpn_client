@@ -88,26 +88,32 @@ final class ConnectionManager: ObservableObject {
     }
 
     func connect() {
-        guard let profile else {
+        guard let currentProfile = profile else {
             setConnectionError(ConnectionManagerError.noProfile)
             return
         }
 
         resetConnectionProgress()
-        appendActivity("Connect requested → \(profile.displayAddress) (\(profile.proto))")
+        appendActivity("Connect requested → \(currentProfile.displayAddress) (\(currentProfile.proto))")
         state = .connecting
         lastConnectionError = nil
 
-        Task {
+        Task { [currentProfile] in
+            var profile = currentProfile
+            if let latest = self.profile {
+                profile = latest
+            }
+
             do {
                 try await runStep("validate") {
                     try NaiveURLParser.validate(profile)
-                    appendActivity("Profile validated")
+                    appendActivity("Profile validated (\(profile.proto.uppercased()))")
                 }
 
                 let configURL = try await runStep("config") {
+                    appendActivity("Upstream proxy: \(profile.redactedProxyURLString())")
                     let url = try ConfigWriter.write(profile: profile)
-                    appendActivity("Config saved: \(url.lastPathComponent)")
+                    appendActivity("Config saved: \(url.path)")
                     return url
                 }
 
@@ -201,6 +207,15 @@ final class ConnectionManager: ObservableObject {
     func handleIncomingURL(_ url: URL) {
         importURLText = url.absoluteString
         importURL(url.absoluteString)
+    }
+
+    func setProtocol(_ proto: String) {
+        guard var profile, ["https", "quic"].contains(proto) else { return }
+        profile.proto = proto
+        self.profile = profile
+        importURLText = NaiveURLParser.toURLString(from: profile)
+        saveProfile()
+        appendActivity("Protocol set to \(proto.uppercased())")
     }
 
     private func resetConnectionProgress() {

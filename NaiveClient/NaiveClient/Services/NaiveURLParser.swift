@@ -68,7 +68,19 @@ enum NaiveURLParser {
         }
 
         let fragment = profile.name.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) ?? profile.name
-        return "naive://\(auth)\(profile.host):\(profile.port)#\(fragment)"
+        let scheme = schemeForProtocol(profile.proto)
+        return "\(scheme)://\(auth)\(profile.host):\(profile.port)#\(fragment)"
+    }
+
+    private static func schemeForProtocol(_ proto: String) -> String {
+        switch proto {
+        case "quic":
+            return "naive+quic"
+        case "https":
+            return "naive"
+        default:
+            return "naive+\(proto)"
+        }
     }
 
     private static func parseManual(_ raw: String, proto: String) throws -> NaiveProfile {
