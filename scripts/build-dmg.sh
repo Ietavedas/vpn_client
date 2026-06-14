@@ -9,7 +9,6 @@ ARCH="${2:-$(uname -m)}"
 VERSION="${3:-1.0.0}"
 
 BUILD_DIR="${ROOT_DIR}/build"
-APP_PATH="${BUILD_DIR}/${CONFIGURATION}/NaiveClient.app"
 DIST_DIR="${ROOT_DIR}/dist"
 DMG_NAME="NaiveClient-${VERSION}-macOS-${ARCH}.dmg"
 DMG_PATH="${DIST_DIR}/${DMG_NAME}"
@@ -18,19 +17,28 @@ STAGING_DIR="${BUILD_DIR}/dmg-staging"
 echo "==> Download naive core"
 bash "${ROOT_DIR}/scripts/download-naive.sh" "${ARCH}"
 
-echo "==> Build ${SCHEME} (${CONFIGURATION})"
-xcodebuild \
-  -project "${PROJECT_DIR}/NaiveClient.xcodeproj" \
-  -scheme "${SCHEME}" \
-  -configuration "${CONFIGURATION}" \
-  -derivedDataPath "${BUILD_DIR}/DerivedData" \
-  SYMROOT="${BUILD_DIR}" \
-  clean build
+echo "==> Build ${SCHEME} (${CONFIGURATION}) for ${ARCH}"
+XCODE_ARGS=(
+  -project "${PROJECT_DIR}/NaiveClient.xcodeproj"
+  -scheme "${SCHEME}"
+  -configuration "${CONFIGURATION}"
+  -derivedDataPath "${BUILD_DIR}/DerivedData"
+  CODE_SIGNING_ALLOWED=NO
+)
 
-if [[ ! -d "${APP_PATH}" ]]; then
-  echo "Built app not found at ${APP_PATH}" >&2
+if [[ "${ARCH}" == "x86_64" ]]; then
+  XCODE_ARGS+=(ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO)
+fi
+
+xcodebuild "${XCODE_ARGS[@]}" clean build
+
+APP_PATH="$(find "${BUILD_DIR}/DerivedData/Build/Products/${CONFIGURATION}" -maxdepth 1 -name '*.app' -type d | head -n 1)"
+if [[ -z "${APP_PATH}" || ! -d "${APP_PATH}" ]]; then
+  echo "Built app not found under ${BUILD_DIR}/DerivedData/Build/Products/${CONFIGURATION}" >&2
   exit 1
 fi
+
+echo "Built app: ${APP_PATH}"
 
 echo "==> Ad-hoc sign app and bundled naive binary"
 /usr/bin/codesign --force --deep --sign - "${APP_PATH}/Contents/Resources/naive"
@@ -44,9 +52,9 @@ ln -s /Applications "${STAGING_DIR}/Applications"
 
 hdiutil create \
   -volname "NaiveClient" \
-  -srcfolder "${STAGING_DIR}" \
   -ov \
   -format UDZO \
-  "${DMG_PATH}"
+  "${DMG_PATH}" \
+  "${STAGING_DIR}"
 
 echo "Created ${DMG_PATH}"
