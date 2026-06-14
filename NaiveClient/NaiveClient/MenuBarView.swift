@@ -42,6 +42,10 @@ struct MenuBarView: View {
 
             statusView
 
+            if showProgressPanel {
+                progressPanel
+            }
+
             HStack {
                 Button(manager.isConnected ? "Disconnect" : "Connect") {
                     manager.toggleConnection()
@@ -60,14 +64,18 @@ struct MenuBarView: View {
             }
         }
         .padding(16)
-        .frame(width: 360)
+        .frame(width: 400)
         .onOpenURL { url in
             manager.handleIncomingURL(url)
         }
     }
 
+    private var showProgressPanel: Bool {
+        manager.isConnecting || !manager.connectionSteps.isEmpty || !manager.activityLog.isEmpty
+    }
+
     private var isConnectDisabled: Bool {
-        if case .connecting = manager.state { return true }
+        if manager.isConnecting { return true }
         if manager.profile == nil { return true }
         return false
     }
@@ -79,7 +87,7 @@ struct MenuBarView: View {
             Label("Disconnected", systemImage: "circle")
                 .foregroundStyle(.secondary)
         case .connecting:
-            Label("Connecting...", systemImage: "hourglass")
+            Label(manager.currentStepTitle ?? "Connecting…", systemImage: "hourglass")
                 .foregroundStyle(.orange)
         case .connected:
             Label("Connected via SOCKS 127.0.0.1:1080", systemImage: "checkmark.circle.fill")
@@ -95,6 +103,94 @@ struct MenuBarView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+
+    private var progressPanel: some View {
+        GroupBox("Connection progress") {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(manager.connectionSteps) { step in
+                    stepRow(step)
+                }
+
+                if !manager.activityLog.isEmpty {
+                    Divider()
+                    Text("Activity log")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 4) {
+                            ForEach(Array(manager.activityLog.enumerated()), id: \.offset) { _, line in
+                                Text(line)
+                                    .font(.system(.caption2, design: .monospaced))
+                                    .foregroundStyle(logColor(for: line))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .textSelection(.enabled)
+                            }
+                        }
+                    }
+                    .frame(height: 130)
+                }
+            }
+        }
+    }
+
+    private func stepRow(_ step: ConnectionStepItem) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: stepIcon(for: step.status))
+                .foregroundStyle(stepColor(for: step.status))
+                .frame(width: 14)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(step.title)
+                    .font(.caption.weight(step.status == .running ? .semibold : .regular))
+                if let detail = step.detail, !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private func stepIcon(for status: ConnectionStepStatus) -> String {
+        switch status {
+        case .pending:
+            return "circle"
+        case .running:
+            return "arrow.triangle.2.circlepath"
+        case .success:
+            return "checkmark.circle.fill"
+        case .failed:
+            return "xmark.circle.fill"
+        }
+    }
+
+    private func stepColor(for status: ConnectionStepStatus) -> Color {
+        switch status {
+        case .pending:
+            return .secondary
+        case .running:
+            return .orange
+        case .success:
+            return .green
+        case .failed:
+            return .red
+        }
+    }
+
+    private func logColor(for line: String) -> Color {
+        if line.contains("ERROR:") {
+            return .red
+        }
+        if line.contains("naive:") {
+            return .primary
+        }
+        if line.contains("OK") || line.contains("success") {
+            return .green
+        }
+        return .secondary
     }
 }
 

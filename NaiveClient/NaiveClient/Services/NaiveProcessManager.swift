@@ -47,11 +47,22 @@ final class NaiveProcessManager: @unchecked Sendable {
     private let stateLock = NSLock()
     private var process: Process?
     private var stderrBuffer = ""
+    private var emittedLogLines: [String] = []
     private var lastLogLine: String?
     private var isRunning = false
+    private var logHandler: (@Sendable (String) -> Void)?
     private let queue = DispatchQueue(label: "NaiveProcessManager")
 
-    func start(configURL: URL) async throws {
+    func setLogHandler(_ handler: (@Sendable (String) -> Void)?) {
+        stateLock.lock()
+        logHandler = handler
+        stateLock.unlock()
+    }
+
+    func start(
+        configURL: URL,
+        onProgress: (@Sendable (String) -> Void)? = nil
+    ) async throws {
         let binaryURL = try preparedBinaryURL()
 
         if await isPortOpen(host: "127.0.0.1", port: ConfigWriter.listenPort) {
@@ -84,10 +95,11 @@ final class NaiveProcessManager: @unchecked Sendable {
             }
 
             self.setProcess(proc)
+            onProgress?("naive process started (pid \(proc.processIdentifier))")
 
-            let ready = await self.waitForReady(process: proc, timeout: 8)
+            let ready = await self.waitForReady(process: proc, timeout: 12, onProgress: onProgress)
             guard ready else {
-                let log = self.lastMeaningfulLog()
+                let log = self.combinedLogTail()
                 let exitCode = proc.isRunning ? nil : proc.terminationStatus
                 await self.stop()
 
@@ -98,6 +110,7 @@ final class NaiveProcessManager: @unchecked Sendable {
             }
 
             self.setRunning(true)
+            onProgress?("Local SOCKS port \(ConfigWriter.listenPort) is open")
         }.value
     }
 
@@ -112,6 +125,7 @@ final class NaiveProcessManager: @unchecked Sendable {
         let runningProcess = process
         process = nil
         isRunning = false
+        logHandler = nil
         stateLock.unlock()
 
         if let runningProcess, runningProcess.isRunning {
@@ -162,6 +176,7 @@ final class NaiveProcessManager: @unchecked Sendable {
     private func clearLog() {
         stateLock.lock()
         stderrBuffer = ""
+        emittedLogLines = []
         lastLogLine = nil
         stateLock.unlock()
     }
@@ -169,36 +184,68 @@ final class NaiveProcessManager: @unchecked Sendable {
     private func appendLog(_ chunk: String) {
         stateLock.lock()
         stderrBuffer.append(chunk)
-        let lines = stderrBuffer.split(separator: "\n", omittingEmptySubsequences: false)
-        if let last = lines.last {
-            if chunk.hasSuffix("\n") {
-                stderrBuffer = ""
-            } else {
-                stderrBuffer = String(last)
+        var linesToEmit: [String] = []
+
+        while let newlineIndex = stderrBuffer.firstIndex(of: "\n") {
+            let line = String(stderrBuffer[..<newlineIndex])
+            stderrBuffer = String(stderrBuffer[stderrBuffer.index(after: newlineIndex)...])
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                linesToEmit.append(trimmed)
             }
-            lastLogLine = String(last).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        let handler = logHandler
+        stateLock.unlock()
+
+        for line in linesToEmit {
+            recordEmittedLine(line)
+            handler?(line)
+        }
+    }
+
+    private func recordEmittedLine(_ line: String) {
+        stateLock.lock()
+        lastLogLine = line
+        emittedLogLines.append(line)
+        if emittedLogLines.count > 50 {
+            emittedLogLines.removeFirst(emittedLogLines.count - 50)
         }
         stateLock.unlock()
     }
 
-    private func lastMeaningfulLog() -> String? {
+    private func combinedLogTail() -> String? {
         stateLock.lock()
         defer { stateLock.unlock() }
+        if !emittedLogLines.isEmpty {
+            return emittedLogLines.suffix(3).joined(separator: " | ")
+        }
         let line = lastLogLine?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let line, !line.isEmpty else { return nil }
         return line
     }
 
-    private func waitForReady(process: Process, timeout: TimeInterval) async -> Bool {
-        let deadline = Date().addingTimeInterval(timeout)
+    private func waitForReady(
+        process: Process,
+        timeout: TimeInterval,
+        onProgress: (@Sendable (String) -> Void)?
+    ) async -> Bool {
+        let started = Date()
+        let deadline = started.addingTimeInterval(timeout)
         while Date() < deadline {
             if !process.isRunning {
+                onProgress?("naive process exited before port became ready")
                 return false
             }
+
+            let elapsed = Int(Date().timeIntervalSince(started))
+            let logHint = combinedLogTail() ?? "no output from naive yet"
+            onProgress?("Waiting for SOCKS :\(ConfigWriter.listenPort)… \(elapsed)s (\(logHint))")
+
             if await isPortOpen(host: "127.0.0.1", port: ConfigWriter.listenPort) {
                 return true
             }
-            try? await Task.sleep(nanoseconds: 200_000_000)
+            try? await Task.sleep(nanoseconds: 500_000_000)
         }
         return false
     }

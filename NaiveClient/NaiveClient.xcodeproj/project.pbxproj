@@ -10,11 +10,13 @@
 		A10000000000000000000001 /* NaiveClientApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* NaiveClientApp.swift */; };
 		A10000000000000000000002 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* MenuBarView.swift */; };
 		A10000000000000000000003 /* NaiveProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* NaiveProfile.swift */; };
+		A10000000000000000000010 /* ConnectionStepItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* ConnectionStepItem.swift */; };
 		A10000000000000000000004 /* NaiveURLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* NaiveURLParser.swift */; };
 		A10000000000000000000005 /* ConfigWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* ConfigWriter.swift */; };
 		A10000000000000000000006 /* NaiveProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* NaiveProcessManager.swift */; };
 		A10000000000000000000007 /* SystemProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* SystemProxyManager.swift */; };
 		A10000000000000000000008 /* ConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* ConnectionManager.swift */; };
+		A10000000000000000000011 /* ConnectionDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* ConnectionDiagnostics.swift */; };
 		A10000000000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* Assets.xcassets */; };
 		A1000000000000000000000A /* naive in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* naive */; };
 		A1000000000000000000000B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* AppDelegate.swift */; };
@@ -26,11 +28,13 @@
 		A20000000000000000000001 /* NaiveClientApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveClientApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* NaiveProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveProfile.swift; sourceTree = "<group>"; };
+		A20000000000000000000010 /* ConnectionStepItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStepItem.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* NaiveURLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveURLParser.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* ConfigWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigWriter.swift; sourceTree = "<group>"; };
 		A20000000000000000000006 /* NaiveProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveProcessManager.swift; sourceTree = "<group>"; };
 		A20000000000000000000007 /* SystemProxyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemProxyManager.swift; sourceTree = "<group>"; };
 		A20000000000000000000008 /* ConnectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionManager.swift; sourceTree = "<group>"; };
+		A20000000000000000000011 /* ConnectionDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionDiagnostics.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000000000000000000000A /* naive */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = naive; sourceTree = "<group>"; };
 		A2000000000000000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -88,6 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000003 /* NaiveProfile.swift */,
+				A20000000000000000000010 /* ConnectionStepItem.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -100,6 +105,7 @@
 				A20000000000000000000006 /* NaiveProcessManager.swift */,
 				A20000000000000000000007 /* SystemProxyManager.swift */,
 				A20000000000000000000008 /* ConnectionManager.swift */,
+				A20000000000000000000011 /* ConnectionDiagnostics.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -185,11 +191,13 @@
 				A10000000000000000000001 /* NaiveClientApp.swift in Sources */,
 				A10000000000000000000002 /* MenuBarView.swift in Sources */,
 				A10000000000000000000003 /* NaiveProfile.swift in Sources */,
+				A10000000000000000000010 /* ConnectionStepItem.swift in Sources */,
 				A10000000000000000000004 /* NaiveURLParser.swift in Sources */,
 				A10000000000000000000005 /* ConfigWriter.swift in Sources */,
 				A10000000000000000000006 /* NaiveProcessManager.swift in Sources */,
 				A10000000000000000000007 /* SystemProxyManager.swift in Sources */,
 				A10000000000000000000008 /* ConnectionManager.swift in Sources */,
+				A10000000000000000000011 /* ConnectionDiagnostics.swift in Sources */,
 				A1000000000000000000000B /* AppDelegate.swift in Sources */,
 				A1000000000000000000000C /* StatusBarController.swift in Sources */,
 				A1000000000000000000000D /* NaiveCharacterSets.swift in Sources */,

@@ -4,6 +4,7 @@ import Foundation
 enum ConnectionManagerError: LocalizedError {
     case noProfile
     case invalidProfile(String)
+    case socksProbeFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -11,6 +12,8 @@ enum ConnectionManagerError: LocalizedError {
             return "Import a naive:// link before connecting."
         case .invalidProfile(let reason):
             return "Profile is invalid: \(reason)"
+        case .socksProbeFailed(let reason):
+            return "SOCKS probe failed: \(reason)"
         }
     }
 }
@@ -29,6 +32,9 @@ final class ConnectionManager: ObservableObject {
     @Published var importURLText = ""
     @Published private(set) var lastImportError: String?
     @Published private(set) var lastConnectionError: String?
+    @Published private(set) var connectionSteps: [ConnectionStepItem] = []
+    @Published private(set) var activityLog: [String] = []
+    @Published private(set) var currentStepTitle: String?
 
     private let processManager = NaiveProcessManager()
     private let proxyManager = SystemProxyManager.shared
@@ -38,12 +44,23 @@ final class ConnectionManager: ObservableObject {
         static let importURL = "savedImportURL"
     }
 
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
+
     init() {
         loadSavedProfile()
     }
 
     var isConnected: Bool {
         if case .connected = state { return true }
+        return false
+    }
+
+    var isConnecting: Bool {
+        if case .connecting = state { return true }
         return false
     }
 
@@ -76,23 +93,74 @@ final class ConnectionManager: ObservableObject {
             return
         }
 
-        do {
-            try NaiveURLParser.validate(profile)
-        } catch {
-            setConnectionError(ConnectionManagerError.invalidProfile(error.localizedDescription))
-            return
-        }
-
+        resetConnectionProgress()
+        appendActivity("Connect requested → \(profile.displayAddress) (\(profile.proto))")
         state = .connecting
         lastConnectionError = nil
 
         Task {
             do {
-                let configURL = try ConfigWriter.write(profile: profile)
-                try await processManager.start(configURL: configURL)
-                try await proxyManager.enable()
+                try await runStep("validate") {
+                    try NaiveURLParser.validate(profile)
+                    appendActivity("Profile validated")
+                }
+
+                let configURL = try await runStep("config") {
+                    let url = try ConfigWriter.write(profile: profile)
+                    appendActivity("Config saved: \(url.lastPathComponent)")
+                    return url
+                }
+
+                processManager.setLogHandler { [weak self] line in
+                    Task { @MainActor in
+                        self?.appendActivity("naive: \(line)")
+                        self?.updateStepDetail("naive", detail: line)
+                    }
+                }
+
+                beginStep("naive")
+                do {
+                    try await processManager.start(configURL: configURL) { [weak self] progress in
+                        Task { @MainActor in
+                            guard let self else { return }
+                            self.appendActivity(progress)
+                            self.updateStepDetail("naive", detail: progress)
+                            if progress.contains("Waiting for SOCKS") || progress.contains("process started") {
+                                if self.connectionSteps.first(where: { $0.id == "socks" })?.status == .pending {
+                                    self.beginStep("socks")
+                                }
+                                self.updateStepDetail("socks", detail: progress)
+                            }
+                        }
+                    }
+                    finishStep("naive", success: true, detail: "naive running")
+                    finishStep("socks", success: true, detail: "Port \(ConfigWriter.listenPort) open")
+                } catch {
+                    finishStep("naive", success: false, detail: error.localizedDescription)
+                    finishStep("socks", success: false, detail: error.localizedDescription)
+                    throw error
+                }
+
+                let probeMessage = try await runStep("probe") {
+                    appendActivity("Testing SOCKS handshake on 127.0.0.1:\(ConfigWriter.listenPort)…")
+                    let message = await ConnectionDiagnostics.verifySOCKSProxy()
+                    appendActivity(message)
+                    guard message.contains("OK") else {
+                        throw ConnectionManagerError.socksProbeFailed(message)
+                    }
+                    return message
+                }
+
+                try await runStep("proxy") {
+                    appendActivity("Enabling macOS system SOCKS proxy…")
+                    try await proxyManager.enable()
+                    appendActivity("System proxy enabled for active network interfaces")
+                }
+
+                finishStep("proxy", success: true, detail: probeMessage)
                 state = .connected
                 lastConnectionError = nil
+                appendActivity("Connected successfully")
             } catch {
                 await processManager.stop()
                 await proxyManager.disable()
@@ -112,6 +180,8 @@ final class ConnectionManager: ObservableObject {
         await proxyManager.disable()
         state = .disconnected
         lastConnectionError = nil
+        currentStepTitle = nil
+        appendActivity("Disconnected")
     }
 
     private func disconnectInternal() async {
@@ -119,6 +189,8 @@ final class ConnectionManager: ObservableObject {
         await proxyManager.disable()
         state = .disconnected
         lastConnectionError = nil
+        currentStepTitle = nil
+        appendActivity("Disconnected")
     }
 
     func toggleConnection() {
@@ -130,10 +202,74 @@ final class ConnectionManager: ObservableObject {
         importURL(url.absoluteString)
     }
 
+    private func resetConnectionProgress() {
+        connectionSteps = [
+            ConnectionStepItem(id: "validate", title: "Validate profile"),
+            ConnectionStepItem(id: "config", title: "Write config.json"),
+            ConnectionStepItem(id: "naive", title: "Launch naive process"),
+            ConnectionStepItem(id: "socks", title: "Wait for local SOCKS :1080"),
+            ConnectionStepItem(id: "probe", title: "Test SOCKS response"),
+            ConnectionStepItem(id: "proxy", title: "Enable system proxy"),
+        ]
+        activityLog = []
+        currentStepTitle = nil
+    }
+
+    private func appendActivity(_ message: String) {
+        let line = "[\(Self.timeFormatter.string(from: Date()))] \(message)"
+        activityLog.append(line)
+        if activityLog.count > 200 {
+            activityLog.removeFirst(activityLog.count - 200)
+        }
+    }
+
+    private func beginStep(_ id: String) {
+        guard let index = connectionSteps.firstIndex(where: { $0.id == id }) else { return }
+        connectionSteps[index].status = .running
+        currentStepTitle = connectionSteps[index].title
+    }
+
+    private func finishStep(_ id: String, success: Bool, detail: String? = nil) {
+        guard let index = connectionSteps.firstIndex(where: { $0.id == id }) else { return }
+        connectionSteps[index].status = success ? .success : .failed
+        if let detail {
+            connectionSteps[index].detail = detail
+        }
+    }
+
+    private func updateStepDetail(_ id: String, detail: String) {
+        guard let index = connectionSteps.firstIndex(where: { $0.id == id }) else { return }
+        connectionSteps[index].detail = detail
+    }
+
+    private func runStep(_ id: String, _ work: () async throws -> Void) async rethrows {
+        beginStep(id)
+        do {
+            try await work()
+            finishStep(id, success: true)
+        } catch {
+            finishStep(id, success: false, detail: error.localizedDescription)
+            throw error
+        }
+    }
+
+    private func runStep<T>(_ id: String, _ work: () async throws -> T) async rethrows -> T {
+        beginStep(id)
+        do {
+            let value = try await work()
+            finishStep(id, success: true)
+            return value
+        } catch {
+            finishStep(id, success: false, detail: error.localizedDescription)
+            throw error
+        }
+    }
+
     private func setConnectionError(_ error: Error) {
         let message = error.localizedDescription
         lastConnectionError = message
         state = .error(message)
+        appendActivity("ERROR: \(message)")
         showErrorAlert(message)
     }
 

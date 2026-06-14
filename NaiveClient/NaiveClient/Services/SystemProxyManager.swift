@@ -23,9 +23,20 @@ final class SystemProxyManager: @unchecked Sendable {
     private var enabledServices: [String] = []
 
     func enable(port: Int = ConfigWriter.listenPort) async throws {
-        try await Task.detached(priority: .userInitiated) {
-            try self.enableSync(port: port)
-        }.value
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                try await Task.detached(priority: .userInitiated) {
+                    try self.enableSync(port: port)
+                }.value
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: 15_000_000_000)
+                throw SystemProxyError.commandFailed("networksetup timed out after 15 seconds")
+            }
+
+            try await group.next()
+            group.cancelAll()
+        }
     }
 
     func disable() async {
