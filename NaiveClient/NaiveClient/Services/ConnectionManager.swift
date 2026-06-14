@@ -111,17 +111,18 @@ final class ConnectionManager: ObservableObject {
                     return url
                 }
 
-                processManager.setLogHandler { [weak self] line in
-                    Task { @MainActor in
-                        self?.appendActivity("naive: \(line)")
-                        self?.updateStepDetail("naive", detail: line)
+                processManager.setLogHandler { line in
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        self.appendActivity("naive: \(line)")
+                        self.updateStepDetail("naive", detail: line)
                     }
                 }
 
                 beginStep("naive")
                 do {
-                    try await processManager.start(configURL: configURL) { [weak self] progress in
-                        Task { @MainActor in
+                    try await processManager.start(configURL: configURL) { progress in
+                        Task { @MainActor [weak self] in
                             guard let self else { return }
                             self.appendActivity(progress)
                             self.updateStepDetail("naive", detail: progress)
