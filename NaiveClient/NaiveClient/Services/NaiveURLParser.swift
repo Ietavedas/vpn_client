@@ -81,9 +81,9 @@ enum NaiveURLParser {
 
         if let hashIndex = body.firstIndex(of: "#") {
             let fragment = String(body[body.index(after: hashIndex)...])
-            name = fragment.removingPercentEncoding?.trimmingCharacters(in: .whitespacesAndNewlines)
-            if name?.isEmpty != false {
-                name = "naive"
+            let decodedName = fragment.removingPercentEncoding?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let decodedName, !decodedName.isEmpty {
+                name = decodedName
             }
             body = String(body[..<hashIndex])
         }
@@ -117,7 +117,7 @@ enum NaiveURLParser {
         }
 
         return NaiveProfile(
-            name: name ?? "naive",
+            name: name,
             username: username,
             password: password,
             host: host,
