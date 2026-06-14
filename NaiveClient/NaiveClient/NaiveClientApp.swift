@@ -23,7 +23,7 @@ struct NaiveClientApp: App {
         case .connected:
             return "network"
         case .connecting:
-            return "network.badge.shield.half.filled"
+            return "arrow.triangle.2.circlepath"
         case .error:
             return "exclamationmark.triangle"
         case .disconnected:

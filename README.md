@@ -11,7 +11,7 @@ Paste a `naive://` link, click **Connect**, and macOS routes traffic through loc
    - **Apple Silicon (M1/M2/M3/M4):** `NaiveClient-x.x.x-macOS-arm64.dmg`
    - **Intel Mac:** `NaiveClient-x.x.x-macOS-x86_64.dmg`
 3. Open the DMG and drag **NaiveClient** to **Applications**.
-4. Launch **NaiveClient** from Applications.
+4. Launch **NaiveClient** from **Applications** (not from inside the DMG).
 5. If macOS blocks the app:
    - Right-click the app → **Open** → **Open** again, or
    - Run in Terminal:
@@ -20,6 +20,28 @@ Paste a `naive://` link, click **Connect**, and macOS routes traffic through loc
      ```
 
 No Xcode or Homebrew is required for end users.
+
+### App opens but nothing appears?
+
+NaiveClient is a **menu bar app** — there is no Dock icon and no main window.
+
+1. Look at the **top menu bar** (right side, near Wi‑Fi and the clock).
+2. Click the **network icon** (or `…` / `>>` if icons are hidden).
+3. On first launch, a hint dialog should appear.
+
+If double‑clicking the app in Applications does nothing, it may already be running:
+
+```bash
+pkill NaiveClient
+xattr -cr /Applications/NaiveClient.app
+open /Applications/NaiveClient.app
+```
+
+To check for crash logs:
+
+```bash
+log show --predicate 'process == "NaiveClient"' --last 5m
+```
 
 ## Usage
 
