@@ -1,0 +1,296 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* NaiveClientApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* NaiveClientApp.swift */; };
+		A10000000000000000000002 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* MenuBarView.swift */; };
+		A10000000000000000000003 /* NaiveProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* NaiveProfile.swift */; };
+		A10000000000000000000004 /* NaiveURLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* NaiveURLParser.swift */; };
+		A10000000000000000000005 /* ConfigWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* ConfigWriter.swift */; };
+		A10000000000000000000006 /* NaiveProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* NaiveProcessManager.swift */; };
+		A10000000000000000000007 /* SystemProxyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* SystemProxyManager.swift */; };
+		A10000000000000000000008 /* ConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* ConnectionManager.swift */; };
+		A10000000000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* Assets.xcassets */; };
+		A1000000000000000000000A /* naive in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* naive */; };
+		A1000000000000000000000B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* AppDelegate.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* NaiveClientApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveClientApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* NaiveProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveProfile.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* NaiveURLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveURLParser.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* ConfigWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigWriter.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* NaiveProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaiveProcessManager.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* SystemProxyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemProxyManager.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* ConnectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionManager.swift; sourceTree = "<group>"; };
+		A20000000000000000000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A2000000000000000000000A /* naive */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = naive; sourceTree = "<group>"; };
+		A2000000000000000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A2000000000000000000000C /* NaiveClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NaiveClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A40000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000002 /* NaiveClient */,
+				A40000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A40000000000000000000002 /* NaiveClient */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000001 /* NaiveClientApp.swift */,
+				A2000000000000000000000D /* AppDelegate.swift */,
+				A20000000000000000000002 /* MenuBarView.swift */,
+				A40000000000000000000004 /* Models */,
+				A40000000000000000000005 /* Services */,
+				A40000000000000000000006 /* Resources */,
+				A20000000000000000000009 /* Assets.xcassets */,
+				A2000000000000000000000B /* Info.plist */,
+			);
+			path = NaiveClient;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000C /* NaiveClient.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000003 /* NaiveProfile.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000005 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000004 /* NaiveURLParser.swift */,
+				A20000000000000000000005 /* ConfigWriter.swift */,
+				A20000000000000000000006 /* NaiveProcessManager.swift */,
+				A20000000000000000000007 /* SystemProxyManager.swift */,
+				A20000000000000000000008 /* ConnectionManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000006 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000A /* naive */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* NaiveClient */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A70000000000000000000003 /* Build configuration list for PBXNativeTarget "NaiveClient" */;
+			buildPhases = (
+				A60000000000000000000001 /* Sources */,
+				A30000000000000000000001 /* Frameworks */,
+				A60000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NaiveClient;
+			productName = NaiveClient;
+			productReference = A2000000000000000000000C /* NaiveClient.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A80000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A50000000000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A70000000000000000000001 /* Build configuration list for PBXProject "NaiveClient" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A40000000000000000000001;
+			productRefGroup = A40000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A50000000000000000000001 /* NaiveClient */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A60000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000009 /* Assets.xcassets in Resources */,
+				A1000000000000000000000A /* naive in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A60000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* NaiveClientApp.swift in Sources */,
+				A10000000000000000000002 /* MenuBarView.swift in Sources */,
+				A10000000000000000000003 /* NaiveProfile.swift in Sources */,
+				A10000000000000000000004 /* NaiveURLParser.swift in Sources */,
+				A10000000000000000000005 /* ConfigWriter.swift in Sources */,
+				A10000000000000000000006 /* NaiveProcessManager.swift in Sources */,
+				A10000000000000000000007 /* SystemProxyManager.swift in Sources */,
+				A10000000000000000000008 /* ConnectionManager.swift in Sources */,
+				A1000000000000000000000B /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A90000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A90000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A90000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NaiveClient/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.naiveclient.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A90000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NaiveClient/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.naiveclient.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A70000000000000000000001 /* Build configuration list for PBXProject "NaiveClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90000000000000000000001 /* Debug */,
+				A90000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A70000000000000000000003 /* Build configuration list for PBXNativeTarget "NaiveClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90000000000000000000003 /* Debug */,
+				A90000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A80000000000000000000001 /* Project object */;
+}
