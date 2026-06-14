@@ -57,7 +57,7 @@ curl_download() {
 
 RELEASE_JSON="$(curl_github "https://api.github.com/repos/klzgrad/naiveproxy/releases/latest")"
 
-mapfile -t ASSET_META < <(ASSET_PATTERN="${ASSET_PATTERN}" python3 -c "
+ASSET_LINE="$(ASSET_PATTERN="${ASSET_PATTERN}" python3 -c "
 import json
 import os
 import sys
@@ -68,17 +68,13 @@ release = json.loads(sys.argv[1])
 for asset in release.get('assets', []):
     name = asset['name']
     if name.endswith('.tar.xz') and pattern in name and 'openwrt' not in name:
-        print(release['tag_name'])
-        print(name)
-        print(asset['browser_download_url'])
+        print('\t'.join([release['tag_name'], name, asset['browser_download_url']]))
         break
 else:
     raise SystemExit(f'No matching naiveproxy macOS asset found for pattern {pattern}')
-" "${RELEASE_JSON}")
+" "${RELEASE_JSON}")"
 
-NAIVE_VERSION="${ASSET_META[0]}"
-ASSET_NAME="${ASSET_META[1]}"
-DOWNLOAD_URL="${ASSET_META[2]}"
+IFS=$'\t' read -r NAIVE_VERSION ASSET_NAME DOWNLOAD_URL <<< "${ASSET_LINE}"
 
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
